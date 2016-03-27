@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="NumberView">
+        <attr name="number" format="integer" />
+        <attr name="duration" format="integer" />
+        <attr name="velocity" format="integer" />
+        <attr name="strokeWidth" format="integer" />
+    </declare-styleable>
+</resources>
