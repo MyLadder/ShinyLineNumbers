@@ -2,6 +2,8 @@ package com.darvds.shinylinenubers.views;
 
 import android.content.Context;
 
+import com.darvds.shinylinenumbers.views.NumberView;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;

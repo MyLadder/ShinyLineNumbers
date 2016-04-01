@@ -1,1 +1,1 @@
-include ':sample', ':shinylinenumbers'
+include ':sample', ':shinylinenumbers', ':shinywatchface'

@@ -3,7 +3,7 @@ package com.darvds.shinylinenumbers.model;
 import java.security.InvalidParameterException;
 
 /**
- * Created by davidscott1 on 26/03/2016.
+ * Get the points for each digit to draw the path
  */
 public class NumberUtils {
 

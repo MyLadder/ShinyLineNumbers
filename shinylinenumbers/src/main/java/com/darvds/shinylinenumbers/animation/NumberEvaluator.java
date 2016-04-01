@@ -4,7 +4,7 @@ import android.animation.TypeEvaluator;
 import android.service.wallpaper.WallpaperService;
 
 /**
- * Created by davidscott1 on 27/03/2016.
+ * Get the values for the points when moving from one digit to another
  */
 public class NumberEvaluator implements TypeEvaluator<float[][]> {
     private float[][] _cachedPoints = null;
