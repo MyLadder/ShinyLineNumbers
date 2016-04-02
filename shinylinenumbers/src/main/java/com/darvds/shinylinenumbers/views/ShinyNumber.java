@@ -29,7 +29,7 @@ public class ShinyNumber {
 
 
     private int animationDuration = DEFAULT_DURATION;
-    private int velocity = DEFAULT_VELOCITY;
+    private double velocity = DEFAULT_VELOCITY;
     private int strokeWidth = DEFAULT_STROKE_WIDTH;
     private int colour = DEFAULT_COLOUR;
 
@@ -72,7 +72,7 @@ public class ShinyNumber {
         init();
     }
 
-    public ShinyNumber(int duration, int velocity, int strokeWidth, ArrayList<Integer> colours){
+    public ShinyNumber(int duration, double velocity, int strokeWidth, ArrayList<Integer> colours){
         this.animationDuration = duration;
         this.velocity = velocity;
         this.strokeWidth = strokeWidth;
@@ -173,7 +173,7 @@ public class ShinyNumber {
         this.animationDuration = duration;
     }
 
-    public void setVelocity(int velocity) {
+    public void setVelocity(double velocity) {
         this.velocity = velocity;
     }
 
