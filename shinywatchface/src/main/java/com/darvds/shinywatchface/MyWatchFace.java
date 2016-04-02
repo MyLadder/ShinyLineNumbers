@@ -38,9 +38,12 @@ import android.view.WindowInsets;
 import com.darvds.shinylinenumbers.model.LineSegment;
 import com.darvds.shinylinenumbers.views.ShinyNumber;
 import com.darvds.shinywatchface.model.DigitItem;
+import com.darvds.shinywatchface.model.schemes.ColourScheme;
+import com.darvds.shinywatchface.model.schemes.SchemeIO;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.TimeZone;
 
@@ -111,19 +114,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
     private class Engine extends CanvasWatchFaceService.Engine {
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
-        boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
         boolean mAmbient;
-        Time mTime;
 
+        private Calendar mCalendar;
 
-        final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                mTime.clear(intent.getStringExtra("time-zone"));
-                mTime.setToNow();
-            }
-        };
         int mTapCount;
 
         float mXOffset;
@@ -166,32 +161,57 @@ public class MyWatchFace extends CanvasWatchFaceService {
          */
         private boolean mIsRound;
 
+        /**
+         * The colour scheme of the view
+         */
+        private ColourScheme mColourScheme;
+
 
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
+
+            loadColourScheme();
+
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MyWatchFace.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
                     .setShowSystemUiTime(false)
                     .setAcceptsTapEvents(true)
-                    .setStatusBarGravity(Gravity.RIGHT)
-                    .setHotwordIndicatorGravity(Gravity.LEFT)
+                    .setStatusBarGravity(Gravity.END)
+                    .setHotwordIndicatorGravity(Gravity.START)
+                    .setViewProtectionMode(mColourScheme.needsScrim() ?
+                            WatchFaceStyle.PROTECT_STATUS_BAR |
+                                    WatchFaceStyle.PROTECT_HOTWORD_INDICATOR
+                            : 0)
                     .build());
+
             Resources resources = MyWatchFace.this.getResources();
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
 
-            mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.background));
 
-            mTime = new Time();
+            mCalendar = Calendar.getInstance();
 
             createNumberArray();
 
             updateDigits();
 
         }
+
+
+        /**
+         * Load the colour scheme for the view. This needs to be done before setting the
+         * watchfacestyle
+         */
+        private void loadColourScheme(){
+            mColourScheme = new SchemeIO();
+
+            mBackgroundPaint = new Paint();
+            mBackgroundPaint.setColor(mColourScheme.getBackground());
+
+        }
+
 
         /**
          * Initialise the array of digits to display in each mode
@@ -200,11 +220,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
             mShinyNumberArray = new HashMap<>();
 
             for(int i = 0; i< DigitItem.TOTAL; i++){
-                ShinyNumber number = new ShinyNumber();
-
-                //Set standard options for all
-                number.setStrokeWidth(STROKE_WIDTH_LARGE);
-                number.setVelocity(VELOCITY);
+                ShinyNumber number = new ShinyNumber(250, VELOCITY, STROKE_WIDTH_LARGE,
+                        mColourScheme.getLineColours());
 
 
                 //Set always animating
@@ -239,11 +256,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             super.onVisibilityChanged(visible);
 
             if (visible) {
-                registerReceiver();
-
                 updateDigits();
-            } else {
-                unregisterReceiver();
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -251,22 +264,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
             updateTimer();
         }
 
-        private void registerReceiver() {
-            if (mRegisteredTimeZoneReceiver) {
-                return;
-            }
-            mRegisteredTimeZoneReceiver = true;
-            IntentFilter filter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
-            MyWatchFace.this.registerReceiver(mTimeZoneReceiver, filter);
-        }
-
-        private void unregisterReceiver() {
-            if (!mRegisteredTimeZoneReceiver) {
-                return;
-            }
-            mRegisteredTimeZoneReceiver = false;
-            MyWatchFace.this.unregisterReceiver(mTimeZoneReceiver);
-        }
 
         @Override
         public void onApplyWindowInsets(WindowInsets insets) {
@@ -537,10 +534,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
          */
         private void updateDigits(){
 
-            // Update time zone in case it changed while we weren't visible.
-            mTime.clear(TimeZone.getDefault().getID());
-            mTime.setToNow();
-
             updateTime();
             updateDate();
 
@@ -550,9 +543,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * Update the time digits
          */
         private void updateTime(){
-            int hour = mTime.hour;
-            int min = mTime.minute;
-            int sec = mTime.second;
+            int hour = mCalendar.get(Calendar.HOUR);
+            int min = mCalendar.get(Calendar.MINUTE);
+            int sec = mCalendar.get(Calendar.SECOND);
 
             int hourStart = hour / 10;
             mShinyNumberArray.get(DigitItem.HOUR1).setNumber(hourStart, !mAmbient);
@@ -571,8 +564,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * Update the date digits
          */
         private void updateDate(){
-            int day = mTime.monthDay;
-            int month = mTime.month;
+            int day = mCalendar.get(Calendar.DAY_OF_MONTH);
+            int month = mCalendar.get(Calendar.MONTH);
 
             int dayStart = day / 10;
             mShinyNumberArray.get(DigitItem.DAY1).setNumber(dayStart, !mAmbient);
@@ -603,7 +596,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
          */
         private void toggleAmbientMode(){
 
-
             mShinyNumberArray.get(DigitItem.SEC1).setAlwaysAnimating(!mAmbient);
             mShinyNumberArray.get(DigitItem.SEC2).setAlwaysAnimating(!mAmbient);
 
@@ -626,17 +618,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
                         case DigitItem.MIN2:
                         case DigitItem.MON1:
                         case DigitItem.MON2:
-                            mShinyNumberArray.get(i).setColour(colourLight);
+                            mShinyNumberArray.get(i).setColour(mColourScheme.getDefaultColor());
                             break;
                         default:
-                            mShinyNumberArray.get(i).setColour(colourDark);
+                            mShinyNumberArray.get(i).setColour(mColourScheme.getDefaultColor());
                     }
                 }
             }
-
-
-
-            //Set colours
 
         }
     }

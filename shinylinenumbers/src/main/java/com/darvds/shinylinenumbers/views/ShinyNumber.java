@@ -72,6 +72,16 @@ public class ShinyNumber {
         init();
     }
 
+    public ShinyNumber(int duration, int velocity, int strokeWidth, ArrayList<Integer> colours){
+        this.animationDuration = duration;
+        this.velocity = velocity;
+        this.strokeWidth = strokeWidth;
+
+        init();
+
+        setColours(colours);
+    }
+
 
     private void init(){
         paint = new Paint();
@@ -83,7 +93,7 @@ public class ShinyNumber {
         path = new Path();
         pathMeasure = new PathMeasure();
         pathArray = new HashMap<>();
-
+/*
 
 
         ArrayList<Integer> colours = new ArrayList<>();
@@ -92,7 +102,7 @@ public class ShinyNumber {
         colours.add(Color.rgb(38, 198, 218));
         colours.add(Color.rgb(140, 242, 242));
 
-        setColours(colours);
+        setColours(colours);*/
     }
 
     public boolean setNumber(int number, boolean animate) throws InvalidParameterException{
