@@ -6,11 +6,17 @@ import com.darvds.shinywatchface.model.schemes.SchemeMarshmallow;
 import com.darvds.shinywatchface.model.schemes.SchemeMaterial;
 
 /**
- * Created by davidscott1 on 28/03/2016.
+ * Helper tool for getting the different colour schemes. Uses an int so can easily be
+ * stored in SharedPreferences
  */
 public class AnimationColours {
 
 
+    /**
+     * Get the colour schemes
+     * @param which which colour scheme to get
+     * @return new instance of the colour scheme
+     */
     public static ColourScheme getColourScheme(int which){
        switch(which){
            case 0:

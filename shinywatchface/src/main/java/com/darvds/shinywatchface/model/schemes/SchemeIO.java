@@ -5,7 +5,8 @@ import android.graphics.Color;
 import java.util.ArrayList;
 
 /**
- * Created by Dave on 02/04/2016.
+ * Based on the colours from the I/O 2016 countdown
+ * https://events.google.com/io2016/
  */
 public class SchemeIO implements ColourScheme {
 
@@ -22,7 +23,7 @@ public class SchemeIO implements ColourScheme {
 
     @Override
     public int getBackground() {
-        return Color.WHITE;
+        return Color.rgb(229,229,229);
     }
 
     @Override

@@ -5,7 +5,7 @@ import android.graphics.Color;
 import java.util.ArrayList;
 
 /**
- * Created by Dave on 02/04/2016.
+ * Based on the 5 main material colours
  */
 public class SchemeMaterial implements ColourScheme {
 
@@ -16,13 +16,14 @@ public class SchemeMaterial implements ColourScheme {
         colours.add(Color.rgb(170, 102, 204));
         colours.add(Color.rgb(153, 204, 0));
         colours.add(Color.rgb(255, 187, 51));
+        colours.add(Color.rgb(255, 68, 68));
 
         return colours;
     }
 
     @Override
     public int getBackground() {
-        return Color.WHITE;
+        return  Color.rgb(229,229,229);
     }
 
     @Override

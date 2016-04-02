@@ -5,7 +5,7 @@ import android.graphics.Color;
 import java.util.ArrayList;
 
 /**
- * Created by Dave on 02/04/2016.
+ * The colours from the Marshmallow loading animation
  */
 public class SchemeMarshmallow implements ColourScheme {
 

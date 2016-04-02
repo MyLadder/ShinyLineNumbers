@@ -39,7 +39,11 @@ import com.darvds.shinylinenumbers.model.LineSegment;
 import com.darvds.shinylinenumbers.views.ShinyNumber;
 import com.darvds.shinywatchface.model.DigitItem;
 import com.darvds.shinywatchface.model.schemes.ColourScheme;
+import com.darvds.shinywatchface.model.schemes.SchemeGingerbread;
+import com.darvds.shinywatchface.model.schemes.SchemeHolo;
 import com.darvds.shinywatchface.model.schemes.SchemeIO;
+import com.darvds.shinywatchface.model.schemes.SchemeMarshmallow;
+import com.darvds.shinywatchface.model.schemes.SchemeMaterial;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -74,7 +78,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
     /**
      * The velocity of the animation
      */
-    private static final int VELOCITY = 2;
+    private static final double VELOCITY = 1.5;
 
     /**
      * Update rate in milliseconds for interactive mode. Updates for 30fps animation
@@ -113,9 +117,19 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
     private class Engine extends CanvasWatchFaceService.Engine {
 
+        // receiver to update the time zone
+        final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mCalendar.setTimeZone(TimeZone.getDefault());
+                invalidate();
+            }
+        };
+
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         Paint mBackgroundPaint;
         boolean mAmbient;
+        private boolean mRegisteredTimeZoneReceiver;
 
         private Calendar mCalendar;
 
@@ -200,12 +214,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
         }
 
 
+
         /**
          * Load the colour scheme for the view. This needs to be done before setting the
          * watchfacestyle
          */
         private void loadColourScheme(){
-            mColourScheme = new SchemeIO();
+            mColourScheme = new SchemeHolo();
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(mColourScheme.getBackground());
@@ -223,16 +238,17 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 ShinyNumber number = new ShinyNumber(250, VELOCITY, STROKE_WIDTH_LARGE,
                         mColourScheme.getLineColours());
 
+                number.setAlwaysAnimating(true);
 
                 //Set always animating
                 switch(i){
                     case DigitItem.SEC1:
                     case DigitItem.SEC2:
-                        number.setAlwaysAnimating(true);
+                  //      number.setAlwaysAnimating(true);
                         number.setStrokeWidth(STROKE_WIDTH_SMALL);
                         break;
                     default:
-                        number.setAlwaysAnimating(false);
+                  //      number.setAlwaysAnimating(false);
                 }
 
 
@@ -257,6 +273,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             if (visible) {
                 updateDigits();
+                registerReceiver();
+            } else {
+                unregisterReceiver();
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -264,6 +283,22 @@ public class MyWatchFace extends CanvasWatchFaceService {
             updateTimer();
         }
 
+        private void registerReceiver() {
+            if (mRegisteredTimeZoneReceiver) {
+                return;
+            }
+            mRegisteredTimeZoneReceiver = true;
+            IntentFilter filter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
+            MyWatchFace.this.registerReceiver(mTimeZoneReceiver, filter);
+        }
+
+        private void unregisterReceiver() {
+            if (!mRegisteredTimeZoneReceiver) {
+                return;
+            }
+            mRegisteredTimeZoneReceiver = false;
+            MyWatchFace.this.unregisterReceiver(mTimeZoneReceiver);
+        }
 
         @Override
         public void onApplyWindowInsets(WindowInsets insets) {
@@ -286,9 +321,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
         @Override
         public void onTimeTick() {
             super.onTimeTick();
+
             invalidate();
 
             updateDigits();
+
         }
 
         @Override
@@ -533,6 +570,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * Update each digit for the correct time and date
          */
         private void updateDigits(){
+
+            mCalendar.setTimeInMillis(System.currentTimeMillis());
 
             updateTime();
             updateDate();
