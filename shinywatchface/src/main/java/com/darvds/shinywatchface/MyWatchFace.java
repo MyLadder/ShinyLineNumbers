@@ -18,6 +18,7 @@ package com.darvds.shinywatchface;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.ArgbEvaluator;
 import android.animation.IntEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -33,10 +34,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.annotation.ColorInt;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.DateFormat;
-import android.util.Log;
 import android.util.Property;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
@@ -45,7 +46,6 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.darvds.shinylinenumbers.model.LineSegment;
 import com.darvds.shinylinenumbers.views.ShinyNumber;
-import com.darvds.shinywatchface.animation.AnimationProperties;
 import com.darvds.shinywatchface.model.AnimationColours;
 import com.darvds.shinywatchface.model.DigitItem;
 import com.darvds.shinywatchface.model.DisplayMode;
@@ -230,26 +230,56 @@ public class MyWatchFace extends CanvasWatchFaceService {
         private int mPeekCardSpacer;
 
 
-        private AnimationProperties mAnimationProperties;
+        /**
+         * The current background colour of the view
+         */
+        @ColorInt
+        private int mBackgroundColour;
 
 
 
-        public void setCurrentTimeY(int y){
-            mCurrentTimeY = y;
-        }
+        //region Properties
 
-        public void setPeekCardSpacer(int space){
-            mPeekCardSpacer = space;
-        }
+        private final Property<MyWatchFace.Engine, Integer> mYPositionProperty =
+                new Property<MyWatchFace.Engine, Integer>(Integer.class, "mCurrentTimeY") {
+            @Override
+            public Integer get(MyWatchFace.Engine engine) {
+                return engine.mCurrentTimeY;
+            }
 
-        public int getCurrentTimeY() {
-            return mCurrentTimeY;
-        }
+            @Override
+            public void set(MyWatchFace.Engine engine, Integer value) {
+                engine.mCurrentTimeY = value;
+            }
+        };
 
-        public int getPeekCardSpacer() {
-            return mPeekCardSpacer;
-        }
+        private final Property<MyWatchFace.Engine, Integer> mCardSpacerProperty =
+                new Property<MyWatchFace.Engine, Integer>(Integer.class, "mPeekCardSpacer") {
+            @Override
+            public Integer get(MyWatchFace.Engine engine) {
+                return engine.mPeekCardSpacer;
+            }
 
+            @Override
+            public void set(MyWatchFace.Engine engine, Integer value) {
+                engine.mPeekCardSpacer = value;
+            }
+        };
+
+        private final Property<MyWatchFace.Engine, Integer> mBackgroundColourProperty =
+                new Property<MyWatchFace.Engine, Integer>(Integer.class, "mBackgroundColour") {
+                    @Override
+                    public Integer get(MyWatchFace.Engine engine) {
+                        return engine.mBackgroundColour;
+                    }
+
+                    @Override
+                    public void set(MyWatchFace.Engine engine, Integer value) {
+                        engine.mBackgroundColour = value;
+                    }
+                };
+
+        //endregion
 
 
         @Override
@@ -275,7 +305,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
             Resources resources = MyWatchFace.this.getResources();
             mWatchDefaults = new WatchDefaults(resources);
 
-            mAnimationProperties = new AnimationProperties();
 
             loadPaints();
 
@@ -309,6 +338,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
             int colourScheme = mWatchPreferences.getColourScheme();
 
             mColourScheme = AnimationColours.getColourScheme(colourScheme);
+
+            mBackgroundColour = mColourScheme.getBackground();
         }
 
         /**
@@ -421,6 +452,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
                     setAntiAlias(!inAmbientMode);
                 }
 
+
                 toggleAmbientMode();
 
                 updateDigits();
@@ -479,11 +511,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             // Draw the background.
-            if (isInAmbientMode()) {
-                canvas.drawColor(mWatchDefaults.getColourAmbientBackground());
-            } else {
-                canvas.drawColor(mColourScheme.getBackground());
-            }
+            canvas.drawColor(mBackgroundColour);
 
             int y = getTimeYPosition(canvas);
 
@@ -788,10 +816,22 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * Update the date digits
          */
         private void updateDate(){
-            int day = mCalendar.get(Calendar.DAY_OF_MONTH);
-            int month = mCalendar.get(Calendar.MONTH) + 1; //Add 1 to month because starts at 0
 
             boolean ambient = isInAmbientMode();
+
+            char[] dateFormat = DateFormat.getDateFormatOrder(MyWatchFace.this);
+
+            int day, month;
+
+            //check if month first
+            if(dateFormat[0] == 'M'){
+                month = mCalendar.get(Calendar.DAY_OF_MONTH);
+                day = mCalendar.get(Calendar.MONTH) + 1; //Add 1 to month because starts at 0
+            } else {
+                day = mCalendar.get(Calendar.DAY_OF_MONTH);
+                month = mCalendar.get(Calendar.MONTH) + 1; //Add 1 to month because starts at 0
+            }
+
 
             int dayStart = day / 10;
             mShinyNumberArray.get(DigitItem.DAY1).setNumber(dayStart, !ambient);
@@ -841,6 +881,14 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 //animate back to position
                 animateToTimeAndSubText();
             }
+
+            //Animate background colour change
+            if(isInAmbientMode()){
+                animateBackgroundToAmbient();
+            } else {
+                animateBackgroundFromAmbient();
+            }
+
         }
 
 
@@ -860,34 +908,48 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
 
         private void animateToJustTime(){
-            startIntAnimation(mAnimationProperties.getYPositionProperty(), mTimeYWithExtra,
-                    mDefaultTimeY);
+            startIntAnimation(mYPositionProperty, mTimeYWithExtra, mDefaultTimeY);
         }
 
         private void animateToTimeAndSubText(){
-            startIntAnimation(mAnimationProperties.getYPositionProperty(), mDefaultTimeY,
-                    mTimeYWithExtra);
+            startIntAnimation(mYPositionProperty, mDefaultTimeY, mTimeYWithExtra);
         }
 
         private void animateShowPeekCard(){
-            startIntAnimation(mAnimationProperties.getCardSpacerProperty(), 0,
-                    (int) (getPeekCardPosition().top / 3.5));
+            startIntAnimation(mCardSpacerProperty, 0, (int) (getPeekCardPosition().top / 3.5));
         }
 
         private void animateHidePeekCard(){
-
-            startIntAnimation(mAnimationProperties.getCardSpacerProperty(),
-                    mPeekCardSpacer, 0);
+            startIntAnimation(mCardSpacerProperty, mPeekCardSpacer, 0);
         }
+
+        private void animateBackgroundToAmbient(){
+            startColourAnimation(mBackgroundColourProperty, mColourScheme.getBackground(),
+                    mWatchDefaults.getColourAmbientBackground());
+        }
+
+        private void animateBackgroundFromAmbient(){
+            startColourAnimation(mBackgroundColourProperty,
+                    mWatchDefaults.getColourAmbientBackground(), mColourScheme.getBackground());
+        }
+
+        private void startColourAnimation(Property property, @ColorInt int from,
+                                          @ColorInt int to){
+            ValueAnimator animator = ObjectAnimator.ofObject(this,
+                    property, new ArgbEvaluator(), from, to);
+
+            startAnimation(animator);
+        }
+
 
         private void startIntAnimation(Property property, int from, int to){
             ValueAnimator animator = ObjectAnimator.ofObject(this,
                    property, new IntEvaluator(), from, to);
 
-            startPositionAnimation(animator);
+            startAnimation(animator);
         }
 
-        private void startPositionAnimation(ValueAnimator animator){
+        private void startAnimation(ValueAnimator animator){
             animator.setInterpolator(new AccelerateDecelerateInterpolator());
             animator.setDuration(MODE_ANIMATION_DURATION);
             animator.addListener(new AnimatorListenerAdapter() {

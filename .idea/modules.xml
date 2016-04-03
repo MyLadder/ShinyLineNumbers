@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/ShinyLineNumbers.iml" filepath="$PROJECT_DIR$/ShinyLineNumbers.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ShinyLineNumbersSample.iml" filepath="$PROJECT_DIR$/ShinyLineNumbersSample.iml" />
       <module fileurl="file://$PROJECT_DIR$/sample/sample.iml" filepath="$PROJECT_DIR$/sample/sample.iml" />
       <module fileurl="file://$PROJECT_DIR$/shinylinenumbers/shinylinenumbers.iml" filepath="$PROJECT_DIR$/shinylinenumbers/shinylinenumbers.iml" />
       <module fileurl="file://$PROJECT_DIR$/shinywatchface/shinywatchface.iml" filepath="$PROJECT_DIR$/shinywatchface/shinywatchface.iml" />
