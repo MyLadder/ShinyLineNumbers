@@ -32,9 +32,11 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.util.Property;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
@@ -43,10 +45,13 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.darvds.shinylinenumbers.model.LineSegment;
 import com.darvds.shinylinenumbers.views.ShinyNumber;
+import com.darvds.shinywatchface.animation.AnimationProperties;
+import com.darvds.shinywatchface.model.AnimationColours;
 import com.darvds.shinywatchface.model.DigitItem;
+import com.darvds.shinywatchface.model.DisplayMode;
 import com.darvds.shinywatchface.model.WatchDefaults;
 import com.darvds.shinywatchface.model.schemes.ColourScheme;
-import com.darvds.shinywatchface.model.schemes.SchemeIO;
+import com.darvds.shinywatchface.preferences.WatchPreferences;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -60,13 +65,16 @@ import java.util.TimeZone;
  */
 public class MyWatchFace extends CanvasWatchFaceService {
 
+    private static final int DIVIDER_LARGE = 16;
+    private static final int DIVIDER_SMALL = 12;
+
+    private static final int MODIFIER_TIME = 4;
+    private static final int MODIFIER_SECONDS = 6;
+    private static final int MODIFIER_DATE = 8;
+
+
+
     public static final int MODE_ANIMATION_DURATION = 250;
-    /**
-     * The different view modes that can be toggled by tapping
-     */
-    private static final int DISPLAY_NONE = 0;
-    private static final int DISPLAY_SECONDS = 1;
-    private static final int DISPLAY_DATE = 2;
 
     /**
      * Spacing between digits when drawn
@@ -87,7 +95,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
     /**
      * Update rate in milliseconds for interactive mode. Updates for 30fps animation
      */
-    private static final long INTERACTIVE_UPDATE_RATE_MS = 33;  //TimeUnit.SECONDS.toMillis(1);
+    private static final long INTERACTIVE_UPDATE_RATE_MS = 33;
 
     /**
      * Handler message id for updating the time periodically in interactive mode.
@@ -119,9 +127,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
         }
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    public class Engine extends CanvasWatchFaceService.Engine {
 
-        // receiver to update the time zone
+        /**
+         * receiver to update the time zone
+         */
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -130,8 +140,14 @@ public class MyWatchFace extends CanvasWatchFaceService {
             }
         };
 
+        /**
+         * Handler for updating the time at the right period
+         */
         final Handler mUpdateTimeHandler = new EngineHandler(this);
 
+        /**
+         * Whether the time zone has been set
+         */
         private boolean mRegisteredTimeZoneReceiver;
 
         /**
@@ -143,6 +159,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * Default values for the watch face from the resources
          */
         private WatchDefaults mWatchDefaults;
+
+        /**
+         * User preferences for the the watch face
+         */
+        private WatchPreferences mWatchPreferences;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -158,7 +179,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         /**
          * Current view mode
          */
-        private int mDisplayMode = DISPLAY_SECONDS;
+        private int mDisplayMode;
 
         /**
          * Get the screen shape
@@ -188,7 +209,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         /**
          * The current position of the time
          */
-        protected int mCurrentTimeY;
+        private int mCurrentTimeY;
 
         /**
          * Store whether in ambient mode so no to animate between the two
@@ -201,27 +222,42 @@ public class MyWatchFace extends CanvasWatchFaceService {
          */
         private boolean mIsAnimating;
 
-        /**
-         * Property for smooth animation of the y positions
-         */
-        private final Property<MyWatchFace.Engine, Integer> Y_POSITION_PROPERTY = new Property<MyWatchFace.Engine, Integer>(Integer.class, "points") {
-            @Override
-            public Integer get(MyWatchFace.Engine engine) {
-                return engine.mCurrentTimeY;
-            }
 
-            @Override
-            public void set(MyWatchFace.Engine engine, Integer value) {
-                engine.mCurrentTimeY = value;
-            }
-        };
+
+        /**
+         * Space to allow for the peek card to display without going over the page
+         */
+        private int mPeekCardSpacer;
+
+
+        private AnimationProperties mAnimationProperties;
+
+
+
+        public void setCurrentTimeY(int y){
+            mCurrentTimeY = y;
+        }
+
+        public void setPeekCardSpacer(int space){
+            mPeekCardSpacer = space;
+        }
+
+        public int getCurrentTimeY() {
+            return mCurrentTimeY;
+        }
+
+        public int getPeekCardSpacer() {
+            return mPeekCardSpacer;
+        }
+
+
 
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-            //Load the colour scheme first, to set the properties of the WatchFaceStyle
-            loadColourScheme();
+            //Load the user preferences
+            loadPreferences();
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MyWatchFace.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
@@ -239,28 +275,46 @@ public class MyWatchFace extends CanvasWatchFaceService {
             Resources resources = MyWatchFace.this.getResources();
             mWatchDefaults = new WatchDefaults(resources);
 
-           initCalendar();
+            mAnimationProperties = new AnimationProperties();
+
+            loadPaints();
+
+            initCalendar();
 
             createNumberArray();
 
             updateDigits();
 
+
+
         }
 
-
+        /**
+         * Initialise the calendar for calculating the time and date
+         */
         private void initCalendar(){
             mCalendar = Calendar.getInstance();
             mCalendar.setTimeZone(TimeZone.getDefault());
         }
 
+        /**
+         * Initialise the user preferences and load their saved preferences
+         */
+        private void loadPreferences(){
+            mWatchPreferences = new WatchPreferences(PreferenceManager
+                    .getDefaultSharedPreferences(MyWatchFace.this));
 
+            mDisplayMode = mWatchPreferences.getDisplayMode();
+
+            int colourScheme = mWatchPreferences.getColourScheme();
+
+            mColourScheme = AnimationColours.getColourScheme(colourScheme);
+        }
 
         /**
-         * Load the colour scheme for the view. This needs to be done before setting the
-         * watchfacestyle
+         * Load the paints for drawing the dividers and any others needed in the future
          */
-        private void loadColourScheme(){
-            mColourScheme = new SchemeIO();
+        private void loadPaints(){
 
             mDividerPaint = new Paint();
             mDividerPaint.setColor(mColourScheme.getDefaultColor());
@@ -397,49 +451,25 @@ public class MyWatchFace extends CanvasWatchFaceService {
                     int currentMode = mDisplayMode;
 
                     mDisplayMode++;
-                    if(mDisplayMode > DISPLAY_DATE){
-                        mDisplayMode = DISPLAY_NONE;
+                    if(mDisplayMode > DisplayMode.DATE){
+                        mDisplayMode = DisplayMode.TIME;
                     }
 
-                    if(currentMode == DISPLAY_NONE){
+                    if(currentMode == DisplayMode.TIME){
                         animateToTimeAndSubText();
 
-                    } else if(mDisplayMode == DISPLAY_NONE){
+                    } else if(mDisplayMode == DisplayMode.TIME){
                         animateToJustTime();
                     }
+
+                    //Update user preferences
+                    mWatchPreferences.setDisplayMode(mDisplayMode);
 
                     break;
             }
             invalidate();
         }
 
-        private void animateToJustTime(){
-            ValueAnimator animator = ObjectAnimator.ofObject(this, Y_POSITION_PROPERTY,
-                    new IntEvaluator(), mTimeYWithExtra, mDefaultTimeY);
-
-            startPositionAnimation(animator);
-        }
-
-        private void animateToTimeAndSubText(){
-            ValueAnimator animator = ObjectAnimator.ofObject(this, Y_POSITION_PROPERTY,
-                    new IntEvaluator(), mDefaultTimeY, mTimeYWithExtra);
-
-            startPositionAnimation(animator);
-        }
-
-        private void startPositionAnimation(ValueAnimator animator){
-            animator.setInterpolator(new AccelerateDecelerateInterpolator());
-            animator.setDuration(MODE_ANIMATION_DURATION);
-            animator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mIsAnimating = false;
-                    updateTimer();
-                }
-            });
-            animator.start();
-            mIsAnimating = true;
-        }
 
 
 
@@ -455,15 +485,17 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 canvas.drawColor(mColourScheme.getBackground());
             }
 
+            int y = getTimeYPosition(canvas);
+
             //Draw the main time digits
-            drawTime(canvas, getTimeYPosition(canvas));
+            drawTime(canvas, y);
 
             //Draw the optional digits
             if(!isInAmbientMode()) {
-                if (mDisplayMode == DISPLAY_SECONDS) {
-                    drawSeconds(canvas, mCurrentTimeY);
-                } else if (mDisplayMode == DISPLAY_DATE) {
-                    drawDate(canvas, mCurrentTimeY);
+                if (mDisplayMode == DisplayMode.SECONDS) {
+                    drawSeconds(canvas, y);
+                } else if (mDisplayMode == DisplayMode.DATE) {
+                    drawDate(canvas, y);
                 }
             }
 
@@ -479,14 +511,14 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
                 mTimeYWithExtra = (int) ((canvasHeight / 8) * 2.5);
 
-                if(mDisplayMode == DISPLAY_NONE){
+                if(mDisplayMode == DisplayMode.TIME){
                     mCurrentTimeY = mDefaultTimeY;
                 } else {
                     mCurrentTimeY = mTimeYWithExtra;
                 }
             }
 
-            return mCurrentTimeY;
+            return mCurrentTimeY - mPeekCardSpacer;
         }
 
         /**
@@ -496,8 +528,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
          */
         private int getSubTextYPosition(Canvas canvas){
             float drawableWidth = getDrawableWidth(canvas, mCurrentTimeY);
-            return mCurrentTimeY
-                    + (int) getDigitSize(drawableWidth, drawableWidth/16f, true)
+            return getTimeYPosition(canvas)
+                    + (int) getDigitSize(drawableWidth, drawableWidth/16, MODIFIER_TIME)
                     + (NUMBER_GAP * 8);
         }
 
@@ -506,19 +538,19 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * / date
          * @param drawableWidth the available width to draw the digit
          * @param dividerSize the size of the divider between the digits
-         * @param large if this is large text or not
+         * @param modifier value to change size of digits
          * @return the size of the digit (width and height)
          */
-        private float getDigitSize(float drawableWidth, float dividerSize, boolean large) {
-            return (drawableWidth-dividerSize-(NUMBER_GAP*8))/(large ? 4 : 6);
+        private float getDigitSize(float drawableWidth, float dividerSize, int modifier) {
+            return (drawableWidth-dividerSize-(NUMBER_GAP*8)) / modifier;
         }
 
         private void drawTime(Canvas canvas, int yPosition){
             float drawableWidth = getDrawableWidth(canvas, yPosition);
 
-            float dividerSize = drawableWidth/16;
+            float dividerSize = drawableWidth/ DIVIDER_LARGE;
 
-            float digitSize = getDigitSize(drawableWidth, dividerSize, true);
+            float digitSize = getDigitSize(drawableWidth, dividerSize, MODIFIER_TIME);
 
             float edgeGap = (canvas.getWidth()-drawableWidth) / 2;
 
@@ -547,7 +579,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         private void drawSeconds(Canvas canvas, int yPosition){
             float drawableWidth = getDrawableWidth(canvas, yPosition);
-            float size = getDigitSize(drawableWidth, 0, false);
+            float size = getDigitSize(drawableWidth, 0, MODIFIER_SECONDS);
             float dy = getSubTextYPosition(canvas);
             float edgeGap = (canvas.getWidth()-drawableWidth) / 2;
 
@@ -556,7 +588,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
                 float dx = edgeGap
                         + (size * (i+2))
-                        + (NUMBER_GAP * (i+2));
+                        + (NUMBER_GAP * (i+1));
 
                 if(i == 0){
                     shinyNumber = mShinyNumberArray.get(DigitItem.SEC1);
@@ -570,8 +602,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         private void drawDate(Canvas canvas, int yPosition){
             float drawableWidth = getDrawableWidth(canvas, yPosition);
-            float dividerSize = drawableWidth / 12;
-            float digitSize = getDigitSize(drawableWidth, dividerSize, false);
+            float dividerSize = drawableWidth / DIVIDER_SMALL;
+            float digitSize = getDigitSize(drawableWidth, dividerSize, MODIFIER_DATE);
             float dy = getSubTextYPosition(canvas);
 
             float edgeGap = (canvas.getWidth()-drawableWidth) / 2;
@@ -579,8 +611,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
             for(int i = 0; i < 4; i++){
 
                 float dx = edgeGap
-                        + (NUMBER_GAP * ((i*2)+3))
-                        + (digitSize * (i+1))
+                        + (NUMBER_GAP * ((i*2)+4))
+                        + (digitSize * (i+2))
                         + (i>1 ? dividerSize : 0);
 
 
@@ -603,7 +635,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 drawDigit(canvas, dx, dy, mShinyNumberArray.get(index).getSegments(digitSize));
             }
 
-            float left = edgeGap + (NUMBER_GAP * 6) + (digitSize *3);
+            float left = edgeGap + (NUMBER_GAP * 8) + (digitSize *4);
 
             //draw divider
             canvas.drawLine(left, dy + digitSize, left+dividerSize, dy, mDividerPaint);
@@ -801,16 +833,75 @@ public class MyWatchFace extends CanvasWatchFaceService {
             mDividerPaint.setColor(isInAmbientMode() ? mWatchDefaults.getColourAmbientText()
                                     : mColourScheme.getDefaultColor());
 
-            if(isInAmbientMode() && mDisplayMode != DISPLAY_NONE){
+            if(isInAmbientMode() && mDisplayMode != DisplayMode.TIME){
                 //animate into position
                 animateToJustTime();
 
-            } else if(!isInAmbientMode() && mDisplayMode != DISPLAY_NONE){
+            } else if(!isInAmbientMode() && mDisplayMode != DisplayMode.TIME){
                 //animate back to position
                 animateToTimeAndSubText();
             }
         }
 
+
+        @Override
+        public void onPeekCardPositionUpdate(Rect rect) {
+            super.onPeekCardPositionUpdate(rect);
+
+            if(rect.top == 0 && mPeekCardSpacer > 0){
+                animateHidePeekCard();
+            } else if(rect.top > 0 && mPeekCardSpacer == 0){
+                animateShowPeekCard();
+            }
+        }
+
+
+        //region Animations
+
+
+        private void animateToJustTime(){
+            startIntAnimation(mAnimationProperties.getYPositionProperty(), mTimeYWithExtra,
+                    mDefaultTimeY);
+        }
+
+        private void animateToTimeAndSubText(){
+            startIntAnimation(mAnimationProperties.getYPositionProperty(), mDefaultTimeY,
+                    mTimeYWithExtra);
+        }
+
+        private void animateShowPeekCard(){
+            startIntAnimation(mAnimationProperties.getCardSpacerProperty(), 0,
+                    (int) (getPeekCardPosition().top / 3.5));
+        }
+
+        private void animateHidePeekCard(){
+
+            startIntAnimation(mAnimationProperties.getCardSpacerProperty(),
+                    mPeekCardSpacer, 0);
+        }
+
+        private void startIntAnimation(Property property, int from, int to){
+            ValueAnimator animator = ObjectAnimator.ofObject(this,
+                   property, new IntEvaluator(), from, to);
+
+            startPositionAnimation(animator);
+        }
+
+        private void startPositionAnimation(ValueAnimator animator){
+            animator.setInterpolator(new AccelerateDecelerateInterpolator());
+            animator.setDuration(MODE_ANIMATION_DURATION);
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mIsAnimating = false;
+                    updateTimer();
+                }
+            });
+            animator.start();
+            mIsAnimating = true;
+        }
+
+        //endregion
     }
 
 
