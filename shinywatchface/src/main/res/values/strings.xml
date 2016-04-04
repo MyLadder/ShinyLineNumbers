@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Shiny Line Watch Face</string>
     <string name="my_digital_name">Shiny Lines</string>
+    <string name="digital_background_color">Colour Scheme</string>
 </resources>

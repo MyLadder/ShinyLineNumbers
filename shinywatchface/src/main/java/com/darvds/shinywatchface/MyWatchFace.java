@@ -84,13 +84,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
     /**
      * Size of the stroke for each digit
      */
-    private static final int STROKE_WIDTH_LARGE = 2;
+    private static final int STROKE_WIDTH_LARGE = 3;
     private static final int STROKE_WIDTH_SMALL = 2;
 
     /**
      * The velocity of the animation
      */
-    private static final double VELOCITY = 100;
+    private static final double VELOCITY = 80;
 
     /**
      * Update rate in milliseconds for interactive mode. Updates for 30fps animation
@@ -286,6 +286,15 @@ public class MyWatchFace extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
+            initialise();
+
+            initCalendar();
+
+            updateDigits();
+
+        }
+
+        private void initialise() {
             //Load the user preferences
             loadPreferences();
 
@@ -305,18 +314,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
             Resources resources = MyWatchFace.this.getResources();
             mWatchDefaults = new WatchDefaults(resources);
 
-
             loadPaints();
 
-            initCalendar();
-
             createNumberArray();
-
-            updateDigits();
-
-
-
         }
+
 
         /**
          * Initialise the calendar for calculating the time and date
@@ -373,7 +375,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 switch(i){
                     case DigitItem.SEC1:
                     case DigitItem.SEC2:
-                  //      number.setAlwaysAnimating(true);
+                    case DigitItem.DAY1:
+                    case DigitItem.DAY2:
+                    case DigitItem.MON1:
+                    case DigitItem.MON2:
+
                         number.setStrokeWidth(STROKE_WIDTH_SMALL);
                         break;
                     default:
@@ -396,8 +402,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
             super.onVisibilityChanged(visible);
 
             if (visible) {
+                initialise();
+
                 updateDigits();
                 registerReceiver();
+
             } else {
                 unregisterReceiver();
             }
@@ -406,6 +415,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             // whether we're in ambient mode), so we may need to start or stop the timer.
             updateTimer();
         }
+
 
         private void registerReceiver() {
             if (mRegisteredTimeZoneReceiver) {
@@ -839,7 +849,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
         //endregion
 
 
-
         /**
          * Toggle anti-aliasing to conserve battery life
          * @param antiAlias enabled or disabled
@@ -882,7 +891,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
             }
 
         }
-
 
         @Override
         public void onPeekCardPositionUpdate(Rect rect) {
