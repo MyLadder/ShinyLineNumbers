@@ -23,7 +23,7 @@ import java.util.List;
 public class ShinyNumber {
 
     public static final int DEFAULT_DURATION = 250;
-    public static final int DEFAULT_VELOCITY = 10;
+    public static final int DEFAULT_VELOCITY = 100;
     public static final int DEFAULT_STROKE_WIDTH = 5;
     public static final int DEFAULT_COLOUR = Color.LTGRAY;
 
@@ -45,6 +45,11 @@ public class ShinyNumber {
 
     private boolean mAlwaysAnimating;
     private boolean mAnimateChanges;
+
+    /**
+     * The last time since the segments were drawn
+     */
+    private long mLastTime;
 
 
     private static final Property<ShinyNumber, float[][]> POINTS_PROPERTY = new Property<ShinyNumber, float[][]>(float[][].class, "points") {
@@ -93,17 +98,11 @@ public class ShinyNumber {
         path = new Path();
         pathMeasure = new PathMeasure();
         pathArray = new HashMap<>();
-/*
 
+        mLastTime = System.currentTimeMillis();
 
-        ArrayList<Integer> colours = new ArrayList<>();
-        colours.add(Color.rgb(239, 83, 80));
-        colours.add(Color.rgb(92, 107, 192));
-        colours.add(Color.rgb(38, 198, 218));
-        colours.add(Color.rgb(140, 242, 242));
-
-        setColours(colours);*/
     }
+
 
     public boolean setNumber(int number, boolean animate) throws InvalidParameterException{
 
@@ -169,13 +168,16 @@ public class ShinyNumber {
 
     }
 
+
     public void setDuration(int duration) {
         this.animationDuration = duration;
     }
 
+
     public void setVelocity(double velocity) {
         this.velocity = velocity;
     }
+
 
     public void setStrokeWidth(int strokeWidth) {
         this.strokeWidth = strokeWidth;
@@ -196,6 +198,7 @@ public class ShinyNumber {
         mAnimateChanges = true;
     }
 
+
     public void setAntiAlias(boolean antiAlias){
         paint.setAntiAlias(antiAlias);
         for(int i = 0; i<paintArray.size(); i++){
@@ -203,22 +206,21 @@ public class ShinyNumber {
         }
     }
 
+
     public void setColour(int colour){
         this.colour = colour;
         paint.setColor(colour);
     }
 
 
-
-
     private float[][] getPoints() {
         return points;
     }
 
+
     private void setPoints(float[][] points) {
         this.points = points;
     }
-
 
 
     private Path getPathForSize(float size){
@@ -238,11 +240,12 @@ public class ShinyNumber {
     }
 
 
-
     public ArrayList<LineSegment> getSegments(float size){
+
+        //Update the position
+        updateOffset();
+
         if (points == null) return null;
-
-
 
         path = getPathForSize(size);
 
@@ -256,8 +259,6 @@ public class ShinyNumber {
         float length = pathMeasure.getLength();
 
         float segmentLength = length / this.paintArray.size();
-
-
 
         int j= 0;
 
@@ -315,15 +316,33 @@ public class ShinyNumber {
     }
 
 
-    public void updateOffset() {
-        animationOffset += velocity;
+    /**
+     * Update the animation offset based on the velocity
+     */
+    private void updateOffset(){
+        long time = System.currentTimeMillis();
 
-        if(animationOffset > pathMeasure.getLength()){
+        long timeSinceLastUpdate = time - mLastTime;
+
+        float update = (float) (velocity / 1000) * timeSinceLastUpdate;
+
+        float position = animationOffset + update;
+
+        if(position < pathMeasure.getLength()){
+            animationOffset = position;
+        } else if(position == pathMeasure.getLength()){
             animationOffset = 0;
-            mAnimateChanges = false;
-        }
-    }
+        } else {
+            int remove = (int) Math.floor(position / pathMeasure.getLength());
 
+            animationOffset = position - (remove * pathMeasure.getLength());
+        }
+
+        if(animationOffset < 0) animationOffset = 0;
+
+        mLastTime = time;
+
+    }
 
 
 

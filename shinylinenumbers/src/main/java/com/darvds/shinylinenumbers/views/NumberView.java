@@ -114,7 +114,7 @@ public class NumberView extends View {
             }
 
             if (mLineSegments.size() > 1) {
-                mShinyNumber.updateOffset();
+            //    mShinyNumber.updateOffset();
                 postInvalidateDelayed(DELAY_MILLISECONDS);
             }
         }

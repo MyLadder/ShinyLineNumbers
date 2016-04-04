@@ -90,7 +90,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
     /**
      * The velocity of the animation
      */
-    private static final double VELOCITY = 1.5;
+    private static final double VELOCITY = 100;
 
     /**
      * Update rate in milliseconds for interactive mode. Updates for 30fps animation
@@ -744,9 +744,10 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * Handle updating the time periodically in interactive mode.
          */
         private void handleUpdateTimeMessage() {
-            updateOffsets();
+        //    updateOffsets();
             updateDigits();
             invalidate();
+
             if (shouldTimerBeRunning()) {
                 long timeMs = System.currentTimeMillis();
                 long delayMs = INTERACTIVE_UPDATE_RATE_MS
@@ -758,15 +759,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
         //endregion
 
         //region Update digits
-
-        /**
-         * Update the position of the animated lines
-         */
-        private void updateOffsets(){
-            for(int i = 0; i < mShinyNumberArray.size(); i++){
-                mShinyNumberArray.get(i).updateOffset();
-            }
-        }
 
         /**
          * Update each digit for the correct time and date
