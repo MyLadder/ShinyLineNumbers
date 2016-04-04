@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * Based on the main colours of gingerbread
  */
-public class SchemeGingerbread implements ColourScheme {
+public class SchemeGingerbread extends ColourScheme {
 
     @Override
     public ArrayList<Integer> getLineColours() {
@@ -28,11 +28,16 @@ public class SchemeGingerbread implements ColourScheme {
 
     @Override
     public int getDefaultColor() {
-        return Color.rgb(243,243,243);
+        return Color.rgb(120,144,156);
     }
 
     @Override
     public boolean needsScrim() {
         return false;
+    }
+
+    @Override
+    public String getName() {
+        return "Gingerbread";
     }
 }

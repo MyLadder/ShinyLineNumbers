@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * Based on the 5 main material colours
  */
-public class SchemeMaterial implements ColourScheme {
+public class SchemeMaterial extends ColourScheme {
 
     @Override
     public ArrayList<Integer> getLineColours() {
@@ -34,5 +34,10 @@ public class SchemeMaterial implements ColourScheme {
     @Override
     public boolean needsScrim() {
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return "Material";
     }
 }

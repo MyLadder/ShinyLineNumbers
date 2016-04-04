@@ -8,15 +8,18 @@ import java.util.ArrayList;
  * Based on the colours from the I/O 2016 countdown
  * https://events.google.com/io2016/
  */
-public class SchemeIO extends ColourScheme {
+public class SchemeRainbow extends ColourScheme {
 
     @Override
     public ArrayList<Integer> getLineColours() {
         ArrayList<Integer> colours = new ArrayList<>();
-        colours.add(Color.rgb(239, 83, 80));
-        colours.add(Color.rgb(92, 107, 192));
-        colours.add(Color.rgb(38, 198, 218));
-        colours.add(Color.rgb(140, 242, 242));
+        colours.add(Color.parseColor("#F44336"));
+        colours.add(Color.parseColor("#FF9800"));
+        colours.add(Color.parseColor("#FFEB3B"));
+        colours.add(Color.parseColor("#4CAF50"));
+        colours.add(Color.parseColor("#03A9F4"));
+        colours.add(Color.parseColor("#3F51B5"));
+        colours.add(Color.parseColor("#9C27B0"));
 
         return colours;
     }
@@ -38,6 +41,6 @@ public class SchemeIO extends ColourScheme {
 
     @Override
     public String getName() {
-        return "I/O 2016";
+        return "Rainbow";
     }
 }

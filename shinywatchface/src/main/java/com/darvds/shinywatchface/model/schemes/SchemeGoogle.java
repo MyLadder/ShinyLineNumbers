@@ -5,9 +5,10 @@ import android.graphics.Color;
 import java.util.ArrayList;
 
 /**
- * The colours from the Marshmallow loading animation
+ * Based on the colours from the I/O 2016 countdown
+ * https://events.google.com/io2016/
  */
-public class SchemeMarshmallow extends ColourScheme {
+public class SchemeGoogle extends ColourScheme {
 
     @Override
     public ArrayList<Integer> getLineColours() {
@@ -22,7 +23,7 @@ public class SchemeMarshmallow extends ColourScheme {
 
     @Override
     public int getBackground() {
-        return Color.BLACK;
+        return Color.rgb(229,229,229);
     }
 
     @Override
@@ -32,11 +33,11 @@ public class SchemeMarshmallow extends ColourScheme {
 
     @Override
     public boolean needsScrim() {
-        return false;
+        return true;
     }
 
     @Override
     public String getName() {
-        return "Google Dark";
+        return "Google";
     }
 }
