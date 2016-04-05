@@ -700,6 +700,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
         private float getDrawableWidth(Canvas canvas, int yPosition){
             float screenWidth = canvas.getWidth();
 
+            float width;
+
             if(mIsRound){
                 float radius = screenWidth / 2;
 
@@ -707,12 +709,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
                 double chordLength = 2 * Math.sqrt((Math.pow(radius, 2) - Math.pow(distance, 2)));
 
-                return (float) chordLength;
+                width = (float) chordLength;
 
             } else {
-                return screenWidth - NUMBER_GAP *2;
+                width =  screenWidth;
             }
 
+            return width - NUMBER_GAP *2;
 
         }
 
