@@ -583,6 +583,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             return (drawableWidth-dividerSize-(NUMBER_GAP*8)) / modifier;
         }
 
+
         private void drawTime(Canvas canvas, int yPosition){
             float drawableWidth = getDrawableWidth(canvas, yPosition);
 
@@ -594,6 +595,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             float y = yPosition + (((drawableWidth/4)-digitSize)/2);
 
+            float removeZero = ((digitSize+NUMBER_GAP) / 2);
+
+            boolean firstDigitIsZero = mShinyNumberArray.get(DigitItem.HOUR1)
+                    .getCurrentNumber() == 0;
+
             for(int i = DigitItem.HOUR1; i<DigitItem.SEC1; i++){
 
                 float dx = edgeGap + NUMBER_GAP
@@ -601,19 +607,32 @@ public class MyWatchFace extends CanvasWatchFaceService {
                         + (NUMBER_GAP * (i*2))
                         + (i > 1 ? dividerSize : 0);
 
-                drawDigit(canvas, dx, y, mShinyNumberArray.get(i).getSegments(digitSize));
+                ShinyNumber number = mShinyNumberArray.get(i);
+
+                //Remove leading 0
+                if(i > DigitItem.HOUR1 && firstDigitIsZero){
+                    dx -= removeZero;
+                }
+
+                if(i > DigitItem.HOUR1 || number.getCurrentNumber() > 0) {
+                    drawDigit(canvas, dx, y, number.getSegments(digitSize));
+                }
+
             }
+
 
             //Draw the time dividers
             for(int i = 1; i<3; i++) {
+                float x = canvas.getWidth() / 2 - (firstDigitIsZero ? removeZero : 0);
                 canvas.drawCircle(
-                        canvas.getWidth() / 2,
+                        x,
                         y + ((digitSize/3)*i),
                         dividerSize /8,
                         mDividerPaint);
             }
 
         }
+
 
         private void drawSeconds(Canvas canvas, int yPosition){
             float drawableWidth = getDrawableWidth(canvas, yPosition);
@@ -637,6 +656,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 drawDigit(canvas, dx, dy, shinyNumber.getSegments(size));
             }
         }
+
 
         private void drawDate(Canvas canvas, int yPosition){
             float drawableWidth = getDrawableWidth(canvas, yPosition);
@@ -678,6 +698,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             //draw divider
             canvas.drawLine(left, dy + digitSize, left+dividerSize, dy, mDividerPaint);
         }
+
 
         private void drawDigit(Canvas canvas, float dx, float dy,
                                ArrayList<LineSegment> lineSegments){

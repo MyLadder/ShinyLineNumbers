@@ -41,6 +41,9 @@ public class ShinyNumber {
     private HashMap<Integer, Path> pathArray;
     private float animationOffset = 0;
     private float[][] points;
+
+
+
     private int currentNumber = -1;
 
     private boolean mAlwaysAnimating;
@@ -357,5 +360,13 @@ public class ShinyNumber {
         return p;
     }
 
+
+    /**
+     * Get the current number that is being displayed
+     * @return the current number
+     */
+    public int getCurrentNumber() {
+        return currentNumber;
+    }
 
 }
