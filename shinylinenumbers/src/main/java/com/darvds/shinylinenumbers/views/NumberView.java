@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class NumberView extends View {
 
-    public static final int DELAY_MILLISECONDS = 32;
+    public static final int DELAY_MILLISECONDS = 33; //fro 30fps
 
 
     private int animationDuration = ShinyNumber.DEFAULT_DURATION;
@@ -34,11 +34,6 @@ public class NumberView extends View {
     private int strokeWidth = ShinyNumber.DEFAULT_STROKE_WIDTH;
 
     private ShinyNumber mShinyNumber;
-
-    private ArrayList<LineSegment> mLineSegments;
-
-
-
 
 
     public NumberView(Context context) {
@@ -106,15 +101,14 @@ public class NumberView extends View {
         minDimen -= 10;
 
 
-        mLineSegments = mShinyNumber.getSegments(minDimen);
+        ArrayList<LineSegment> lineSegments = mShinyNumber.getSegments(minDimen);
 
-        if (mLineSegments != null) {
-            for (LineSegment lineSegment : mLineSegments) {
+        if (lineSegments != null) {
+            for (LineSegment lineSegment : lineSegments) {
                 canvas.drawPath(lineSegment.path, lineSegment.paint);
             }
 
-            if (mLineSegments.size() > 1) {
-            //    mShinyNumber.updateOffset();
+            if (lineSegments.size() > 1) {
                 postInvalidateDelayed(DELAY_MILLISECONDS);
             }
         }
