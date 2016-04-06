@@ -2,6 +2,7 @@
 
 A simple library for displaying animated numbers, based on the [Google I/O 2016 countdown](https://events.google.com/io2016/)
 
+![Example animation](https://raw.githubusercontent.com/darvds/ShinyLineNumbers/master/example.gif)
 
 ##Usage
 It can be used in two ways:
