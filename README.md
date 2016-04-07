@@ -9,15 +9,17 @@ It can be used in two ways:
 
 ###NumberView
 This can be added via xml or programatically:
-    <com.darvds.shinylinenumbers.views.NumberView
-        android:id="@+id/numberView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="4dp"
-        app:strokeWidth="10"
-        app:duration="400"
-        app:number="0"
-        app:velocity="100"/>
+```xml
+<com.darvds.shinylinenumbers.views.NumberView
+    android:id="@+id/numberView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="4dp"
+    app:strokeWidth="10"
+    app:duration="400"
+    app:number="0"
+    app:velocity="100"/>
+    ```
         
 or
         
