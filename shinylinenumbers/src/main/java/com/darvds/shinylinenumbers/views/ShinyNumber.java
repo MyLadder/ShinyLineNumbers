@@ -6,6 +6,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.support.annotation.ColorInt;
+import android.util.Log;
 import android.util.Property;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
@@ -214,12 +215,15 @@ public class ShinyNumber {
         this.mAlwaysAnimating = alwaysAnimating;
     }
 
-    /**
-     * Animate a single loop of colour before returning to the default colour
-     */
-    public void startSingleColourLoop(){
-        mAnimateChanges = true;
+
+    public void startAnimating(){
+        if(mAlwaysAnimating) return;
     }
+
+    public void stopAnimating(){
+        if(!mAlwaysAnimating) return;
+    }
+
 
 
     /**
@@ -267,7 +271,7 @@ public class ShinyNumber {
         ArrayList<LineSegment> segmentArray = new ArrayList<>();
 
         if(this.paintArray != null && this.paintArray.size() > 1
-                && (mAlwaysAnimating  || mAnimateChanges)) {
+                && (mAlwaysAnimating || mAnimateChanges)) {
 
         pathMeasure.setPath(path, true);
 
@@ -277,11 +281,20 @@ public class ShinyNumber {
 
         int j= 0;
 
+
+            //TODO if starting animate then only need to create segments for as much as the offset is greater than segment length
+
+            //TODO if stop animate then do the same thing for start, but in reverse somehow, but needs to leave behind the default colour
+
+          //  int segmentCount = (int) Math.ceil(animationOffset / segmentLength);
+
+       //     for(int i = 0; i < segmentCount; i++){
+
         for(int i = 0; i < this.paintArray.size(); i++) {
+
 
             float start = animationOffset + (segmentLength * i);
             float end = start + segmentLength;
-
 
             if (end > length) {
                 Path p = getSegmentPath(j++);
