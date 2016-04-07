@@ -28,11 +28,11 @@ public class AnimationColours {
     public static ColourScheme getColourScheme(int which){
        switch(which){
            case 0:
-               return new SchemeIO();
+               return new SchemeMarshmallow();
            case 1:
                return new SchemeGoogle();
            case 2:
-               return new SchemeMarshmallow();
+               return new SchemeIO();
            case 3:
                return new SchemeMaterial();
            case 4:
@@ -46,7 +46,7 @@ public class AnimationColours {
            case 8:
                return new SchemePlay();
            default:
-               return new SchemeIO();
+               return new SchemeMarshmallow();
        }
     }
 

@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
+import android.support.annotation.ColorInt;
 import android.util.Property;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
@@ -107,6 +108,13 @@ public class ShinyNumber {
     }
 
 
+    /**
+     * Set the current number to display and if it should animate
+     * @param number the number to change to
+     * @param animate if the number should change with an animation
+     * @return if the view needs to be redrawn
+     * @throws InvalidParameterException
+     */
     public boolean setNumber(int number, boolean animate) throws InvalidParameterException{
 
         if(number == currentNumber) return false;
@@ -121,7 +129,6 @@ public class ShinyNumber {
 
         } else {
             //Animate
-
             float[][] startPoints = NumberUtils.getPoints(currentNumber);
             float[][] endPoints = NumberUtils.getPoints(number);
 
@@ -148,12 +155,11 @@ public class ShinyNumber {
     }
 
 
-    public boolean setNumber(int number) throws InvalidParameterException {
-        return setNumber(number, true);
-    }
-
-
-    public void setColours(List<Integer> colours){
+    /**
+     * Set the array of colours to split the line into
+     * @param colours as ints
+     */
+    public void setColours(@ColorInt List<Integer> colours){
 
         paintArray = new HashMap<>();
 
@@ -171,17 +177,26 @@ public class ShinyNumber {
 
     }
 
-
+    /**
+     * Set the duration of the tween animation
+     * @param duration in milliseconds
+     */
     public void setDuration(int duration) {
         this.animationDuration = duration;
     }
 
-
+    /**
+     * Set the speed that the colours will animate along the lines
+     * @param velocity the speed
+     */
     public void setVelocity(double velocity) {
         this.velocity = velocity;
     }
 
-
+    /**
+     * Set the width of the line
+     * @param strokeWidth line width
+     */
     public void setStrokeWidth(int strokeWidth) {
         this.strokeWidth = strokeWidth;
         paint.setStrokeWidth(strokeWidth);
@@ -191,17 +206,26 @@ public class ShinyNumber {
         }
     }
 
-
+    /**
+     * Set if the number should be animating or not
+     * @param alwaysAnimating view should animate
+     */
     public void setAlwaysAnimating(boolean alwaysAnimating){
         this.mAlwaysAnimating = alwaysAnimating;
     }
 
-
+    /**
+     * Animate a single loop of colour before returning to the default colour
+     */
     public void startSingleColourLoop(){
         mAnimateChanges = true;
     }
 
 
+    /**
+     * Toggle anti-aliasing for battery saving
+     * @param antiAlias enabled / disabled
+     */
     public void setAntiAlias(boolean antiAlias){
         paint.setAntiAlias(antiAlias);
         for(int i = 0; i<paintArray.size(); i++){
@@ -209,43 +233,31 @@ public class ShinyNumber {
         }
     }
 
-
-    public void setColour(int colour){
+    /**
+     * Set the default colour when not animating
+     * @param colour to display
+     */
+    public void setColour(@ColorInt int colour){
         this.colour = colour;
         paint.setColor(colour);
     }
 
-
-    private float[][] getPoints() {
-        return points;
+    /**
+     * Get the current number that is being displayed
+     * @return the current number
+     */
+    public int getCurrentNumber() {
+        return currentNumber;
     }
 
 
-    private void setPoints(float[][] points) {
-        this.points = points;
-    }
-
-
-    private Path getPathForSize(float size){
-
-        int length = points.length;
-
-        path.reset();
-        path.moveTo(size * points[0][0], size * points[0][1]);
-        for (int i = 1; i < length; i += 3) {
-            path.cubicTo(size * points[i][0], size * points[i][1],
-                    size * points[i + 1][0], size * points[i + 1][1],
-                    size * points[i + 2][0], size * points[i + 2][1]);
-        }
-        path.close();
-
-        return path;
-    }
-
-
+    /**
+     * Get an array of LineSegments at a specific height / width
+     * @param size the height / width
+     * @return array of lines
+     */
     public ArrayList<LineSegment> getSegments(float size){
 
-        //Update the position
         updateOffset();
 
         if (points == null) return null;
@@ -318,9 +330,45 @@ public class ShinyNumber {
 
     }
 
+    /**
+     * Get the points for the number
+     * @return all of the points
+     */
+    private float[][] getPoints() {
+        return points;
+    }
 
     /**
-     * Update the animation offset based on the velocity
+     * Set the point positions for the number
+     * @param points positions
+     */
+    private void setPoints(float[][] points) {
+        this.points = points;
+    }
+
+    /**
+     * Get the entire path for the number at a specific size
+     * @param size the height / width
+     * @return a path of the number
+     */
+    private Path getPathForSize(float size){
+
+        int length = points.length;
+
+        path.reset();
+        path.moveTo(size * points[0][0], size * points[0][1]);
+        for (int i = 1; i < length; i += 3) {
+            path.cubicTo(size * points[i][0], size * points[i][1],
+                    size * points[i + 1][0], size * points[i + 1][1],
+                    size * points[i + 2][0], size * points[i + 2][1]);
+        }
+        path.close();
+
+        return path;
+    }
+
+    /**
+     * Update the animation offset based on the velocity and the time
      */
     private void updateOffset(){
         long time = System.currentTimeMillis();
@@ -348,7 +396,11 @@ public class ShinyNumber {
     }
 
 
-
+    /**
+     * Get the path for a specific segment of the number
+     * @param index the segment of the path
+     * @return a path segment from the number
+     */
     private Path getSegmentPath(int index){
         Path p = pathArray.get(index);
         if(p == null){
@@ -360,13 +412,5 @@ public class ShinyNumber {
         return p;
     }
 
-
-    /**
-     * Get the current number that is being displayed
-     * @return the current number
-     */
-    public int getCurrentNumber() {
-        return currentNumber;
-    }
 
 }

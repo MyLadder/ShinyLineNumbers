@@ -1,16 +1,10 @@
 package com.darvds.shinylinenumbers.views;
 
-import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PathMeasure;
-import android.os.Build;
+import android.support.annotation.ColorInt;
 import android.util.AttributeSet;
-import android.util.Property;
 import android.view.View;
 
 import com.darvds.shinylinenumbers.R;
@@ -18,7 +12,6 @@ import com.darvds.shinylinenumbers.model.LineSegment;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -26,9 +19,11 @@ import java.util.List;
  */
 public class NumberView extends View {
 
-    public static final int DELAY_MILLISECONDS = 33; //fro 30fps
+    public static final int DELAY_MILLISECONDS = 33; //for 30fps
 
-
+    /**
+     * Default values
+      */
     private int animationDuration = ShinyNumber.DEFAULT_DURATION;
     private int velocity = ShinyNumber.DEFAULT_VELOCITY;
     private int strokeWidth = ShinyNumber.DEFAULT_STROKE_WIDTH;
@@ -66,25 +61,45 @@ public class NumberView extends View {
     }
 
 
+    /**
+     * Set the current number
+     * @param number to display
+     * @throws InvalidParameterException
+     */
     public void setNumber(int number) throws InvalidParameterException {
-        if(mShinyNumber.setNumber(number)){
+        if(mShinyNumber.setNumber(number, true)){
             postInvalidate();
         }
-
     }
 
-    public void setColours(List<Integer> colours) {
+    /**
+     * Set the array of colours to split the line into
+     * @param colours as ints
+     */
+    public void setColours(@ColorInt List<Integer> colours) {
         mShinyNumber.setColours(colours);
     }
 
+    /**
+     * Set the duration of the tween animation
+     * @param duration in milliseconds
+     */
     public void setDuration(int duration) {
         mShinyNumber.setDuration(duration);
     }
 
-    public void setVelocity(int velocity) {
+    /**
+     * Set the speed that the colours will animate along the lines
+     * @param velocity the speed
+     */
+    public void setVelocity(double velocity) {
         mShinyNumber.setVelocity(velocity);
     }
 
+    /**
+     * Set the width of the line
+     * @param strokeWidth line width
+     */
     public void setStrokeWidth(int strokeWidth) {
         mShinyNumber.setStrokeWidth(strokeWidth);
     }
