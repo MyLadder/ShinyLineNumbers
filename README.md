@@ -9,7 +9,7 @@ It can be used in two ways:
 
 ###NumberView
 This can be added via xml or programatically:
-```    <com.darvds.shinylinenumbers.views.NumberView
+    <com.darvds.shinylinenumbers.views.NumberView
         android:id="@+id/numberView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -18,9 +18,10 @@ This can be added via xml or programatically:
         app:duration="400"
         app:number="0"
         app:velocity="100"/>
-        ```
-        or
-``` NumberView numberView = new NumberView(context);```
+        
+or
+        
+    NumberView numberView = new NumberView(context);
 
 ###ShinyNumber:
 Create this class and get an array of `LineSegment` to draw on a `Canvas`
