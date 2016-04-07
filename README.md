@@ -5,8 +5,6 @@ A simple library for displaying animated numbers, based on the [Google I/O 2016 
 ![Example animation](https://raw.githubusercontent.com/darvds/ShinyLineNumbers/master/example.gif)
 
 ##Usage
-It can be used in two ways:
-
 ###NumberView
 This can be added via xml or programatically:
 ```xml
@@ -23,11 +21,29 @@ This can be added via xml or programatically:
 or
 
 ```java
-    NumberView numberView = new NumberView(context);
+NumberView numberView = new NumberView(context);
 ```
 
 ###ShinyNumber:
 Create this class and get an array of `LineSegment` to draw on a `Canvas`
+
+The main methods for changing the appearance are:
+
+`setNumber(int number, boolean animate)`
+Set the number to display and if to animate to it
+
+`setColours(@ColorInt List<Integer> colours)`
+Set the list of colours for the number
+
+`setDuration(int duration)`
+Set the duration of the tween animation when changing number
+
+`setVelocity(double velocity)`
+Set the speed of the segments animating along the path
+
+`setStrokeWidth(int strokeWidth)`
+Set the width of the line
+
 
 
 ##License
