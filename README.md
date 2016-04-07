@@ -27,6 +27,7 @@ NumberView numberView = new NumberView(context);
 ###ShinyNumber:
 Create this class and get an array of `LineSegment` to draw on a `Canvas`
 
+###Methods
 The main methods for changing the appearance are:
 
 `setNumber(int number, boolean animate)`
