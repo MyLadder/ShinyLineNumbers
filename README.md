@@ -19,11 +19,12 @@ This can be added via xml or programatically:
     app:duration="400"
     app:number="0"
     app:velocity="100"/>
-    ```
-        
+```
 or
-        
+
+```java
     NumberView numberView = new NumberView(context);
+```
 
 ###ShinyNumber:
 Create this class and get an array of `LineSegment` to draw on a `Canvas`
