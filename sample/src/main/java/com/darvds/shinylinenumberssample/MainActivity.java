@@ -32,6 +32,14 @@ public class MainActivity extends AppCompatActivity {
 
         nv.setColours(colours);
 
+     //   nv.setVelocity(200);
+
+        nv.setNumber(2);
+
+        nv.getShinyNumber().setAlwaysAnimating(true);
+
+        nv.getShinyNumber().stopAnimating();
+
         final Handler handler = new Handler();
 
         Runnable r = new Runnable() {
@@ -49,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        r.run();
+    //    r.run();
 
     }
 

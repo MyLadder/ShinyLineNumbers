@@ -28,6 +28,7 @@ public class NumberView extends View {
     private int velocity = ShinyNumber.DEFAULT_VELOCITY;
     private int strokeWidth = ShinyNumber.DEFAULT_STROKE_WIDTH;
 
+
     private ShinyNumber mShinyNumber;
 
 
@@ -60,6 +61,11 @@ public class NumberView extends View {
        mShinyNumber = new ShinyNumber(animationDuration, velocity, strokeWidth);
     }
 
+
+
+    public ShinyNumber getShinyNumber() {
+        return mShinyNumber;
+    }
 
     /**
      * Set the current number

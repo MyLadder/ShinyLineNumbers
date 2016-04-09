@@ -366,7 +366,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 ShinyNumber number = new ShinyNumber(250, VELOCITY, STROKE_WIDTH_LARGE,
                         mColourScheme.getLineColours());
 
-                number.setAlwaysAnimating(true);
+             //   number.setAlwaysAnimating(true);
 
                 //Set default colour for when not animating
                 number.setColour(mWatchDefaults.getColourAmbientText());

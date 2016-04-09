@@ -45,7 +45,6 @@ public class ShinyNumber {
     private float[][] points;
 
 
-
     private int currentNumber = -1;
 
     private boolean mAlwaysAnimating;
@@ -55,6 +54,11 @@ public class ShinyNumber {
      * The last time since the segments were drawn
      */
     private long mLastTime;
+
+
+    private boolean mAnimateToDefault;
+
+    private boolean mAnimateToColours;
 
 
     private static final Property<ShinyNumber, float[][]> POINTS_PROPERTY = new Property<ShinyNumber, float[][]>(float[][].class, "points") {
@@ -93,6 +97,9 @@ public class ShinyNumber {
     }
 
 
+    /**
+     * Initialise the starting fields
+     */
     private void init(){
         paint = new Paint();
         paint.setStrokeWidth(strokeWidth);
@@ -105,6 +112,9 @@ public class ShinyNumber {
         pathArray = new HashMap<>();
 
         mLastTime = System.currentTimeMillis();
+
+        //Start animating when first drawn
+        mAnimateToColours = true;
 
     }
 
@@ -178,6 +188,7 @@ public class ShinyNumber {
 
     }
 
+
     /**
      * Set the duration of the tween animation
      * @param duration in milliseconds
@@ -186,6 +197,7 @@ public class ShinyNumber {
         this.animationDuration = duration;
     }
 
+
     /**
      * Set the speed that the colours will animate along the lines
      * @param velocity the speed
@@ -193,6 +205,7 @@ public class ShinyNumber {
     public void setVelocity(double velocity) {
         this.velocity = velocity;
     }
+
 
     /**
      * Set the width of the line
@@ -207,6 +220,7 @@ public class ShinyNumber {
         }
     }
 
+
     /**
      * Set if the number should be animating or not
      * @param alwaysAnimating view should animate
@@ -216,14 +230,24 @@ public class ShinyNumber {
     }
 
 
+    /**
+     * Start animating from one colour to multiple
+     */
     public void startAnimating(){
-        if(mAlwaysAnimating) return;
+  //      if(mAlwaysAnimating) return;
+
+        mAnimateToColours = true;
     }
 
+
+    /**
+     * Stop animating slowly
+     */
     public void stopAnimating(){
         if(!mAlwaysAnimating) return;
-    }
 
+        mAnimateToDefault = true;
+    }
 
 
     /**
@@ -286,12 +310,17 @@ public class ShinyNumber {
 
             //TODO if stop animate then do the same thing for start, but in reverse somehow, but needs to leave behind the default colour
 
-          //  int segmentCount = (int) Math.ceil(animationOffset / segmentLength);
+            int segmentCount = (int) Math.ceil(animationOffset / segmentLength);
 
-       //     for(int i = 0; i < segmentCount; i++){
+  //          for(int i = 0; i < segmentCount; i++){
+
+
+     //       for(int i = 0; i<1; i++){
+
 
         for(int i = 0; i < this.paintArray.size(); i++) {
 
+        //    float start =
 
             float start = animationOffset + (segmentLength * i);
             float end = start + segmentLength;
@@ -331,6 +360,23 @@ public class ShinyNumber {
             }
         }
 
+            if(mAnimateToColours || mAnimateToDefault) {
+
+                float start = mAnimateToColours ? animationOffset : 0;
+                float end = mAnimateToColours ? length : animationOffset;
+
+                //add a new segment for changing animation
+                Path pDefault = new Path();
+                pathMeasure.getSegment(start, end, pDefault, true);
+
+                LineSegment segment = new LineSegment();
+                segment.path = pDefault;
+                segment.paint = paint;
+
+                segmentArray.add(segment);
+
+            }
+
 
         } else {
             LineSegment segment = new LineSegment();
@@ -343,6 +389,7 @@ public class ShinyNumber {
 
     }
 
+
     /**
      * Get the points for the number
      * @return all of the points
@@ -351,6 +398,7 @@ public class ShinyNumber {
         return points;
     }
 
+
     /**
      * Set the point positions for the number
      * @param points positions
@@ -358,6 +406,7 @@ public class ShinyNumber {
     private void setPoints(float[][] points) {
         this.points = points;
     }
+
 
     /**
      * Get the entire path for the number at a specific size
@@ -380,6 +429,7 @@ public class ShinyNumber {
         return path;
     }
 
+
     /**
      * Update the animation offset based on the velocity and the time
      */
@@ -392,14 +442,23 @@ public class ShinyNumber {
 
         float position = animationOffset + update;
 
+        float length = pathMeasure.getLength();
+
         if(position < pathMeasure.getLength()){
             animationOffset = position;
         } else if(position == pathMeasure.getLength()){
             animationOffset = 0;
         } else {
+
+            if(position > length && length > 0){
+                mAnimateToColours = false;
+                mAnimateToDefault = false;
+            }
+
             int remove = (int) Math.floor(position / pathMeasure.getLength());
 
             animationOffset = position - (remove * pathMeasure.getLength());
+
         }
 
         if(animationOffset < 0) animationOffset = 0;
