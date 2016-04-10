@@ -30,8 +30,8 @@ Create this class and get an array of `LineSegment` to draw on a `Canvas`
 ###Methods
 The main methods for changing the appearance are:
 
-`setNumber(int number, boolean animate)`
-Set the number to display and if to animate to it
+`setNumber(int number, boolean animate, boolean animateFromCenter)`
+Set the number to display, choose to animate and if to animate from previous number or the center
 
 `setColours(@ColorInt List<Integer> colours)`
 Set the list of colours for the number
@@ -45,7 +45,11 @@ Set the speed of the segments animating along the path
 `setStrokeWidth(int strokeWidth)`
 Set the width of the line
 
+`animateToColours(boolean instantly, int duration)`
+Animate from single colour to list of colours
 
+`animateToDefault(boolean instantly, int duration)`
+Animate to a single colour
 
 ##License
 
