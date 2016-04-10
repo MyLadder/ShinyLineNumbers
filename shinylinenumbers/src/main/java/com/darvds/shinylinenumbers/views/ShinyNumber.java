@@ -1,6 +1,9 @@
 package com.darvds.shinylinenumbers.views;
 
+import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.animation.TypeEvaluator;
+import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -40,6 +43,10 @@ public class ShinyNumber {
     private PathMeasure pathMeasure;
     private Paint paint;
     private HashMap<Integer, Paint> paintArray;
+
+    private HashMap<Integer, Paint> currentPaintArray;
+
+
     private HashMap<Integer, Path> pathArray;
     private float animationOffset = 0;
     private float[][] points;
@@ -54,11 +61,6 @@ public class ShinyNumber {
      * The last time since the segments were drawn
      */
     private long mLastTime;
-
-
-    private boolean mAnimateToDefault;
-
-    private boolean mAnimateToColours;
 
 
     private static final Property<ShinyNumber, float[][]> POINTS_PROPERTY = new Property<ShinyNumber, float[][]>(float[][].class, "points") {
@@ -113,8 +115,6 @@ public class ShinyNumber {
 
         mLastTime = System.currentTimeMillis();
 
-        //Start animating when first drawn
-        mAnimateToColours = true;
 
     }
 
@@ -127,8 +127,21 @@ public class ShinyNumber {
      * @throws InvalidParameterException
      */
     public boolean setNumber(int number, boolean animate) throws InvalidParameterException{
+        return setNumber(number, animate, false);
+    }
 
-        if(number == currentNumber) return false;
+
+    /**
+     * Set the current number to display and if it should animate
+     * @param number the number to change to
+     * @param animate if the number should change with an animation
+     * @param animateFromCenter animate from center point
+     * @return if the view needs to be redrawn
+     * @throws InvalidParameterException
+     */
+    public boolean setNumber(int number, boolean animate, boolean animateFromCenter) throws InvalidParameterException{
+
+        if(number == currentNumber && !animateFromCenter) return false;
 
         boolean needsUpdate;
 
@@ -140,7 +153,14 @@ public class ShinyNumber {
 
         } else {
             //Animate
-            float[][] startPoints = NumberUtils.getPoints(currentNumber);
+            float[][] startPoints;
+
+            if(animateFromCenter){
+                startPoints = new float[][]{{0.5f,0.5f}};
+            } else {
+                startPoints =  NumberUtils.getPoints(currentNumber);
+            }
+
             float[][] endPoints = NumberUtils.getPoints(number);
 
             ObjectAnimator anim = ObjectAnimator.ofObject(this, POINTS_PROPERTY,
@@ -173,6 +193,7 @@ public class ShinyNumber {
     public void setColours(@ColorInt List<Integer> colours){
 
         paintArray = new HashMap<>();
+        currentPaintArray = new HashMap<>();
 
         int i = 0;
         for(Integer color : colours){
@@ -183,8 +204,15 @@ public class ShinyNumber {
             //Add paint
             paintArray.put(i, p);
 
+            Paint p2 = new Paint(paint);
+            p2.setColor(color);
+
+            currentPaintArray.put(i, p2);
+
             i++;
         }
+
+
 
     }
 
@@ -217,6 +245,7 @@ public class ShinyNumber {
 
         for (int i = 0; i < paintArray.size(); i++) {
             paintArray.get(i).setStrokeWidth(strokeWidth);
+            currentPaintArray.get(i).setStrokeWidth(strokeWidth);
         }
     }
 
@@ -230,24 +259,90 @@ public class ShinyNumber {
     }
 
 
-    /**
-     * Start animating from one colour to multiple
-     */
-    public void startAnimating(){
-  //      if(mAlwaysAnimating) return;
+    public void animateToDefault(boolean instantly, int duration){
 
-        mAnimateToColours = true;
+        for(int i = 0; i< paintArray.size(); i++){
+
+            int to = paint.getColor();
+
+            if(instantly) {
+                currentPaintArray.get(i).setColor(to);
+            } else {
+                final int index = i;
+                int from =  paintArray.get(i).getColor();
+
+                            ValueAnimator anim = ValueAnimator.ofArgb(from, to);
+
+            anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    currentPaintArray.get(index).setColor((int) animation.getAnimatedValue());
+                }
+            });
+            anim.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mAlwaysAnimating = false;
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+            anim.setDuration(duration);
+            anim.start();
+            }
+
+
+        }
+
+
     }
 
-
     /**
-     * Stop animating slowly
+     * Animate from the default colour to the proper colours
      */
-    public void stopAnimating(){
-        if(!mAlwaysAnimating) return;
+    public void animateToColours(boolean instantly, int duration){
 
-        mAnimateToDefault = true;
+        mAlwaysAnimating = true;
+
+        for(int i = 0; i< paintArray.size(); i++){
+
+            int to = paintArray.get(i).getColor();
+
+            if(instantly){
+                currentPaintArray.get(i).setColor(to);
+            } else {
+                final int index = i;
+
+                int from = paint.getColor();
+
+                ValueAnimator anim = ValueAnimator.ofArgb(from, to);
+                anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        currentPaintArray.get(index).setColor((int) animation.getAnimatedValue());
+
+                    }
+                });
+                anim.setDuration(duration);
+                anim.start();
+            }
+
+        }
     }
+
 
 
     /**
@@ -258,6 +353,7 @@ public class ShinyNumber {
         paint.setAntiAlias(antiAlias);
         for(int i = 0; i<paintArray.size(); i++){
             paintArray.get(i).setAntiAlias(antiAlias);
+            currentPaintArray.get(i).setAntiAlias(antiAlias);
         }
     }
 
@@ -294,31 +390,19 @@ public class ShinyNumber {
 
         ArrayList<LineSegment> segmentArray = new ArrayList<>();
 
-        if(this.paintArray != null && this.paintArray.size() > 1
+        if(this.currentPaintArray != null && this.currentPaintArray.size() > 1
                 && (mAlwaysAnimating || mAnimateChanges)) {
 
         pathMeasure.setPath(path, true);
 
         float length = pathMeasure.getLength();
 
-        float segmentLength = length / this.paintArray.size();
+        float segmentLength = length / this.currentPaintArray.size();
 
         int j= 0;
 
 
-            //TODO if starting animate then only need to create segments for as much as the offset is greater than segment length
-
-            //TODO if stop animate then do the same thing for start, but in reverse somehow, but needs to leave behind the default colour
-
-            int segmentCount = (int) Math.ceil(animationOffset / segmentLength);
-
-  //          for(int i = 0; i < segmentCount; i++){
-
-
-     //       for(int i = 0; i<1; i++){
-
-
-        for(int i = 0; i < this.paintArray.size(); i++) {
+        for(int i = 0; i < this.currentPaintArray.size(); i++) {
 
         //    float start =
 
@@ -331,18 +415,15 @@ public class ShinyNumber {
 
                 LineSegment segment = new LineSegment();
                 segment.path = p;
-                segment.paint = paintArray.get(i);
+                segment.paint = currentPaintArray.get(i);
 
                 Path p2 = getSegmentPath(j++);
                 pathMeasure.getSegment(start - length, end - length, p2, true);
 
                 LineSegment segment2 = new LineSegment();
                 segment2.path = p2;
-              //  if(!mAlwaysAnimating && !mAnimateChanges){
-              //     segment2.paint = paint;
-              //  } else {
-                    segment2.paint = paintArray.get(i);
-              //  }
+                segment2.paint = currentPaintArray.get(i);
+
 
                 segmentArray.add(segment);
                 segmentArray.add(segment2);
@@ -354,28 +435,11 @@ public class ShinyNumber {
 
                 LineSegment segment = new LineSegment();
                 segment.path = p;
-                segment.paint = paintArray.get(i);
+                segment.paint = currentPaintArray.get(i);
 
                 segmentArray.add(segment);
             }
         }
-
-            if(mAnimateToColours || mAnimateToDefault) {
-
-                float start = mAnimateToColours ? animationOffset : 0;
-                float end = mAnimateToColours ? length : animationOffset;
-
-                //add a new segment for changing animation
-                Path pDefault = new Path();
-                pathMeasure.getSegment(start, end, pDefault, true);
-
-                LineSegment segment = new LineSegment();
-                segment.path = pDefault;
-                segment.paint = paint;
-
-                segmentArray.add(segment);
-
-            }
 
 
         } else {
@@ -450,11 +514,6 @@ public class ShinyNumber {
             animationOffset = 0;
         } else {
 
-            if(position > length && length > 0){
-                mAnimateToColours = false;
-                mAnimateToDefault = false;
-            }
-
             int remove = (int) Math.floor(position / pathMeasure.getLength());
 
             animationOffset = position - (remove * pathMeasure.getLength());
@@ -483,6 +542,8 @@ public class ShinyNumber {
 
         return p;
     }
+
+
 
 
 }

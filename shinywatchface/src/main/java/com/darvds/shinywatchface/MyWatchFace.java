@@ -242,29 +242,29 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         private final Property<MyWatchFace.Engine, Integer> mYPositionProperty =
                 new Property<MyWatchFace.Engine, Integer>(Integer.class, "mCurrentTimeY") {
-            @Override
-            public Integer get(MyWatchFace.Engine engine) {
-                return engine.mCurrentTimeY;
-            }
+                    @Override
+                    public Integer get(MyWatchFace.Engine engine) {
+                        return engine.mCurrentTimeY;
+                    }
 
-            @Override
-            public void set(MyWatchFace.Engine engine, Integer value) {
-                engine.mCurrentTimeY = value;
-            }
-        };
+                    @Override
+                    public void set(MyWatchFace.Engine engine, Integer value) {
+                        engine.mCurrentTimeY = value;
+                    }
+                };
 
         private final Property<MyWatchFace.Engine, Integer> mCardSpacerProperty =
                 new Property<MyWatchFace.Engine, Integer>(Integer.class, "mPeekCardSpacer") {
-            @Override
-            public Integer get(MyWatchFace.Engine engine) {
-                return engine.mPeekCardSpacer;
-            }
+                    @Override
+                    public Integer get(MyWatchFace.Engine engine) {
+                        return engine.mPeekCardSpacer;
+                    }
 
-            @Override
-            public void set(MyWatchFace.Engine engine, Integer value) {
-                engine.mPeekCardSpacer = value;
-            }
-        };
+                    @Override
+                    public void set(MyWatchFace.Engine engine, Integer value) {
+                        engine.mPeekCardSpacer = value;
+                    }
+                };
 
         private final Property<MyWatchFace.Engine, Integer> mBackgroundColourProperty =
                 new Property<MyWatchFace.Engine, Integer>(Integer.class, "mBackgroundColour") {
@@ -290,7 +290,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             initCalendar();
 
-            updateDigits();
+            updateDigits(true, true);
 
         }
 
@@ -366,7 +366,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 ShinyNumber number = new ShinyNumber(250, VELOCITY, STROKE_WIDTH_LARGE,
                         mColourScheme.getLineColours());
 
-             //   number.setAlwaysAnimating(true);
+                number.setAlwaysAnimating(true);
 
                 //Set default colour for when not animating
                 number.setColour(mWatchDefaults.getColourAmbientText());
@@ -383,7 +383,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
                         number.setStrokeWidth(STROKE_WIDTH_SMALL);
                         break;
                     default:
-                  //      number.setAlwaysAnimating(false);
+                        //      number.setAlwaysAnimating(false);
                 }
 
                 mShinyNumberArray.put(i, number);
@@ -404,7 +404,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             if (visible) {
                 initialise();
 
-                updateDigits();
+                updateDigits(true, true);
                 registerReceiver();
 
             } else {
@@ -441,8 +441,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
             // Load resources that have alternate values for round watches.
             Resources resources = MyWatchFace.this.getResources();
             mIsRound = insets.isRound();
-       //     mXOffset = resources.getDimension(isRound
-       //             ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
+            //     mXOffset = resources.getDimension(isRound
+            //             ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
 
         }
 
@@ -462,10 +462,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
                     setAntiAlias(!inAmbientMode);
                 }
 
+                updateDigits(false, true);
 
                 toggleAmbientMode();
-
-                updateDigits();
 
                 invalidate();
             }
@@ -503,6 +502,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
                     } else if(mDisplayMode == DisplayMode.TIME){
                         animateToJustTime();
                     }
+
+                    updateDigits(false, true);
 
                     //Update user preferences
                     mWatchPreferences.setDisplayMode(mDisplayMode);
@@ -671,10 +672,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 float dx = edgeGap
                         + (NUMBER_GAP * ((i*2)+4))
                         + (digitSize * (i+2))
-                        + (i>1 ? dividerSize : 0);
+                        + (i>1 ? dividerSize : 0)
+                        -(dividerSize / 4);
 
 
-               int index = 0;
+                int index = 0;
                 switch(i){
                     case 0:
                         index = DigitItem.DAY1;
@@ -691,9 +693,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 }
 
                 drawDigit(canvas, dx, dy, mShinyNumberArray.get(index).getSegments(digitSize));
+
             }
 
-            float left = edgeGap + (NUMBER_GAP * 8) + (digitSize *4);
+
+            float left = edgeGap + (NUMBER_GAP * 7) + (digitSize *4) - (dividerSize / 4);
 
             //draw divider
             canvas.drawLine(left, dy + digitSize, left+dividerSize, dy, mDividerPaint);
@@ -755,7 +759,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             invalidate();
 
-            updateDigits();
+            updateDigits(false, false);
 
         }
 
@@ -778,8 +782,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * Handle updating the time periodically in interactive mode.
          */
         private void handleUpdateTimeMessage() {
-        //    updateOffsets();
-            updateDigits();
+            //    updateOffsets();
+            updateDigits(false, false);
             invalidate();
 
             if (shouldTimerBeRunning()) {
@@ -797,22 +801,22 @@ public class MyWatchFace extends CanvasWatchFaceService {
         /**
          * Update each digit for the correct time and date
          */
-        private void updateDigits(){
+        private void updateDigits(boolean fromCenterTop, boolean fromCenterBottom){
 
             mCalendar.setTimeInMillis(System.currentTimeMillis());
 
-            updateTime();
-            updateDate();
+            updateTime(fromCenterTop);
+            updateSeconds(fromCenterBottom);
+            updateDate(fromCenterBottom);
 
         }
 
         /**
-         * Update the time digits
+         * Update the hour and minute digits
          */
-        private void updateTime(){
+        private void updateTime(boolean fromCenter){
             int hour = mCalendar.get(Calendar.HOUR);
             int min = mCalendar.get(Calendar.MINUTE);
-            int sec = mCalendar.get(Calendar.SECOND);
 
             //If 12 hour set, make sure 12pm shows as 12.
             //If 24 hour set, show the time value + 12
@@ -826,22 +830,32 @@ public class MyWatchFace extends CanvasWatchFaceService {
             boolean ambient = isInAmbientMode();
 
             int hourStart = hour / 10;
-            mShinyNumberArray.get(DigitItem.HOUR1).setNumber(hourStart, !ambient);
-            mShinyNumberArray.get(DigitItem.HOUR2).setNumber(hour - (hourStart * 10), !ambient);
+            mShinyNumberArray.get(DigitItem.HOUR1).setNumber(hourStart, !ambient, fromCenter);
+            mShinyNumberArray.get(DigitItem.HOUR2).setNumber(hour - (hourStart * 10), !ambient, fromCenter);
 
             int minStart = min / 10;
-            mShinyNumberArray.get(DigitItem.MIN1).setNumber(minStart, !ambient);
-            mShinyNumberArray.get(DigitItem.MIN2).setNumber(min - (minStart * 10), !ambient);
+            mShinyNumberArray.get(DigitItem.MIN1).setNumber(minStart, !ambient, fromCenter);
+            mShinyNumberArray.get(DigitItem.MIN2).setNumber(min - (minStart * 10), !ambient, fromCenter);
+
+        }
+
+        /**
+         * Update the time digits
+         */
+        private void updateSeconds(boolean fromCenter){
+            int sec = mCalendar.get(Calendar.SECOND);
+
+            boolean ambient = isInAmbientMode();
 
             int secStart = sec / 10;
-            mShinyNumberArray.get(DigitItem.SEC1).setNumber(secStart, !ambient);
-            mShinyNumberArray.get(DigitItem.SEC2).setNumber(sec - (secStart * 10), !ambient);
+            mShinyNumberArray.get(DigitItem.SEC1).setNumber(secStart, !ambient, fromCenter);
+            mShinyNumberArray.get(DigitItem.SEC2).setNumber(sec - (secStart * 10), !ambient, fromCenter);
         }
 
         /**
          * Update the date digits
          */
-        private void updateDate(){
+        private void updateDate(boolean fromCenter){
 
             boolean ambient = isInAmbientMode();
 
@@ -860,12 +874,12 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
 
             int dayStart = day / 10;
-            mShinyNumberArray.get(DigitItem.DAY1).setNumber(dayStart, !ambient);
-            mShinyNumberArray.get(DigitItem.DAY2).setNumber(day - (dayStart * 10), !ambient);
+            mShinyNumberArray.get(DigitItem.DAY1).setNumber(dayStart, !ambient, fromCenter);
+            mShinyNumberArray.get(DigitItem.DAY2).setNumber(day - (dayStart * 10), !ambient, fromCenter);
 
             int monthStart = month / 10;
-            mShinyNumberArray.get(DigitItem.MON1).setNumber(monthStart, !ambient);
-            mShinyNumberArray.get(DigitItem.MON2).setNumber(month - (monthStart * 10), !ambient);
+            mShinyNumberArray.get(DigitItem.MON1).setNumber(monthStart, !ambient, fromCenter);
+            mShinyNumberArray.get(DigitItem.MON2).setNumber(month - (monthStart * 10), !ambient, fromCenter);
 
 
         }
@@ -891,12 +905,17 @@ public class MyWatchFace extends CanvasWatchFaceService {
          */
         private void toggleAmbientMode(){
 
+            //Animate colours
             for(int i =0; i< mShinyNumberArray.size(); i++){
-                mShinyNumberArray.get(i).setAlwaysAnimating(!isInAmbientMode());
+                if(isInAmbientMode()){
+                    mShinyNumberArray.get(i).animateToDefault(true, 0);
+                } else {
+                    mShinyNumberArray.get(i).animateToColours(false, 400);
+                }
             }
 
             mDividerPaint.setColor(isInAmbientMode() ? mWatchDefaults.getColourAmbientText()
-                                    : mColourScheme.getDefaultColor());
+                    : mColourScheme.getDefaultColor());
 
             if(isInAmbientMode() && mDisplayMode != DisplayMode.TIME){
                 //animate into position
@@ -914,19 +933,19 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 animateBackgroundFromAmbient();
             }
 
+
         }
 
         @Override
         public void onPeekCardPositionUpdate(Rect rect) {
             super.onPeekCardPositionUpdate(rect);
 
-            if(rect.top == 0 && mPeekCardSpacer > 0){
+            if (rect.top == 0 && mPeekCardSpacer > 0) {
                 animateHidePeekCard();
-            } else if(rect.top > 0 && mPeekCardSpacer == 0){
+            } else if (rect.top > 0 && mPeekCardSpacer == 0) {
                 animateShowPeekCard();
             }
         }
-
 
         //region Animations
 
@@ -968,7 +987,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         private void startIntAnimation(Property property, int from, int to){
             ValueAnimator animator = ObjectAnimator.ofObject(this,
-                   property, new IntEvaluator(), from, to);
+                    property, new IntEvaluator(), from, to);
 
             startAnimation(animator);
         }
