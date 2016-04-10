@@ -2,6 +2,8 @@
 
 A simple library for displaying animated numbers, based on the [Google I/O 2016 countdown](https://events.google.com/io2016/)
 
+The watch face in this sample can be found [here](https://play.google.com/store/apps/details?id=com.darvds.shinywatchface}
+
 ![Example animation](https://raw.githubusercontent.com/darvds/ShinyLineNumbers/master/example.gif)
 
 ##Usage
